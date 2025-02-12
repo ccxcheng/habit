@@ -10,6 +10,8 @@ module.exports = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+            blue: "#3bbaf1",
+
         progress: {
           start: "#67e8f9",
           end: "#86efac",
