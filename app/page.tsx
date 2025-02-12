@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 type Habit = {
   id: string
   name: string
-  completed: boolean[]
+  completed: ("completed" | "skipped" | false)[]
 }
 
 function NewHabitRow({ onAdd }: { onAdd: (name: string) => void }) {
@@ -59,6 +59,7 @@ function NewHabitRow({ onAdd }: { onAdd: (name: string) => void }) {
 export default function HabitTracker() {
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
   const [editMode, setEditMode] = useState(false)
@@ -85,9 +86,21 @@ export default function HabitTracker() {
     localStorage.setItem("habits", JSON.stringify(habits))
   }, [habits])
 
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      setCurrentTime(now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }))
+    }
+
+    updateTime() // Initial update
+    const interval = setInterval(updateTime, 1000) // Update every second
+
+    return () => clearInterval(interval)
+  }, [])
+
   const currentDay = currentDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase()
   const currentDayIndex = days.indexOf(currentDay)
-  const remainingTasks = habits.filter((habit) => !habit.completed[currentDayIndex]).length
+  const remainingTasks = habits.filter((habit) => habit.completed[currentDayIndex] === false).length
 
   const toggleHabit = (habitId: string, dayIndex: number) => {
     if (editMode) return // Prevent toggling in edit mode
@@ -95,7 +108,13 @@ export default function HabitTracker() {
       habits.map((habit) => {
         if (habit.id === habitId) {
           const newCompleted = [...habit.completed]
-          newCompleted[dayIndex] = !newCompleted[dayIndex]
+          if (newCompleted[dayIndex] === false) {
+            newCompleted[dayIndex] = "completed"
+          } else if (newCompleted[dayIndex] === "completed") {
+            newCompleted[dayIndex] = "skipped"
+          } else {
+            newCompleted[dayIndex] = false
+          }
           return { ...habit, completed: newCompleted }
         }
         return habit
@@ -156,25 +175,28 @@ export default function HabitTracker() {
   }, [editingId])
 
   const totalTasks = habits.length
-  const completedTasks = habits.filter((habit) => habit.completed[currentDayIndex]).length
-  const progress = totalTasks > 0 ? Math.max((completedTasks / totalTasks) * 100, 3) : 0
+  const completedTasks = habits.filter((habit) => habit.completed[currentDayIndex] === "completed").length
+  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
 
   return (
     <div className="min-h-screen bg-[#fbfbfb] p-8 pt-16 font-mono">
       {/* Header */}
       <div className="mb-16">
-        <h1 className="text-center mb-2">
+        <h1 className="text-center mb-2 text-3xl font-bold">{currentTime}</h1>
+        <h2 className="text-center mb-2">
           today is {currentDay},{" "}
           {currentDate.toLocaleDateString("en-US", { month: "long", day: "numeric" }).toLowerCase()}
-        </h1>
+        </h2>
         <p className="text-center text-gray-500 mb-4">you have {remainingTasks} tasks remaining</p>
 
         {/* Progress Bar */}
-        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-full progress-gradient transition-all duration-300 ease-in-out"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="w-3/4 mx-auto">
+          <div className="h-4 rounded-full bg-white shadow-sm">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue to-accent-green transition-all duration-300 ease-in-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
       </div>
 
@@ -234,11 +256,17 @@ export default function HabitTracker() {
                 <button
                   onClick={() => toggleHabit(habit.id, index)}
                   className={`w-6 h-6 rounded flex items-center justify-center transition-colors duration-200
-                    ${habit.completed[index] ? "bg-accent-green" : "border-2 border-gray-200 hover:border-gray-300"}
+                    ${
+                      habit.completed[index] === "completed"
+                        ? "bg-accent-green"
+                        : habit.completed[index] === "skipped"
+                          ? "bg-gray-100"
+                          : "border-2 border-gray-200 hover:border-gray-300"
+                    }
                     ${editMode ? "cursor-not-allowed opacity-50" : ""}`}
                   disabled={editMode}
                 >
-                  {habit.completed[index] && <Check className="w-4 w-4 text-white" />}
+                  {habit.completed[index] === "completed" && <Check className="w-4 w-4 text-white" />}
                 </button>
               </div>
             ))}
