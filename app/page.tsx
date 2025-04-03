@@ -66,6 +66,7 @@ export default function HabitTracker() {
   const editInputRef = useRef<HTMLInputElement>(null)
 
   const [habits, setHabits] = useState<Habit[]>([])
+  const [habitsInit, setHabitsInit] =  useState<boolean>(false)
 
   useEffect(() => {
     const savedHabits = localStorage.getItem("habits")
@@ -80,10 +81,13 @@ export default function HabitTracker() {
         { id: "5", name: "draw", completed: Array(7).fill(false) },
       ])
     }
+    setHabitsInit(true)
   }, [])
 
   useEffect(() => {
+    if (habitsInit) {
     localStorage.setItem("habits", JSON.stringify(habits))
+    }
   }, [habits])
 
   useEffect(() => {

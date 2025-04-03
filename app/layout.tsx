@@ -3,7 +3,7 @@ import './globals.css'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
-  title: 'habits',
+  title: 'consystem',
   description: 'made by cc <3',
 }
 
